@@ -24,29 +24,50 @@ public class GitUtil {
 		return result;
 	}
 	
-	public static boolean gitCheckout(String branchs, String path, String remote) {
+	public static void gitCheckout(String branchs, String path, String remote) {
 		String script = "git remote set-url origin " + remote;
 		System.out.println("process : " + script);
-		List<String> result = processShell(script, "", path);
-		if(result.size() == 0)
-			return false;
+		processShell(script, "", path);
 		
 		script = "git checkout -b " + branchs + " origin/" + branchs;
 		System.out.println("process : " + script);
-		result = processShell(script, "", path);
-		if(result.size() == 0)
-			return false;
+		processShell(script, "", path);
 		
-		return true;
+		script = "git checkout " + branchs;
+		System.out.println("process : " + script);
+		processShell(script, "", path);
+		
+		script = "git merge origin/" + branchs;
+		System.out.println("process : " + script);
+		processShell(script, "", path);
 	}
 
 	public static boolean gitClone(String url, String path) {
 		String script = "git clone " + url + " " + path;
 		System.out.println("process : " + script);
 		List<String> result = processShell(script, "");
-		if(result.size() == 0)
+		if(result == null)
 			return false;
 		return true;
+	}
+	
+	public static boolean compileProject(String path) {
+		String script = "mvn clean install -am -DskipTests";
+		System.out.println("process : " + script);
+		List<String> result = processShell(script, "", path);
+		if(result == null)
+			return false;
+		return true;
+	}
+	
+	public static void collectWar(String gitPath, String warPath, String[] modules) {
+		for (String module : modules) {
+			String script = "move " + gitPath + "\\" + module + "\\target\\*.war " + 
+					warPath + "\\" + module + ".war";
+			System.out.println("process : " + script);
+			List<String> result = processShell(script, "");
+			System.out.println(result);
+		}
 	}
 
 	public static List<String> processShell(String script, String args, String... workspace) {
@@ -73,7 +94,7 @@ public class GitUtil {
 
 			int status = process.waitFor();
 			if(status != 0)
-				return new ArrayList<String>();
+				return null;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -82,9 +103,9 @@ public class GitUtil {
 	}
 
 	public static void main(String[] args) {
-		processShell(
-				"git clone https://2301031:glpat-ZRh5ftssQFUHfa9JginF@git.systex.com/misystex/050_tbbbank/b05002204_tbb_asp/backend/dap-adi-admin.git D:\\docker\\git\\base\\2301031\\dap-api-admin",
-				"");
+		List<String> list = processShell("Remove-Item -Path  'D:\\docker\\git\\base\\targets\\*' -Recurse -Force","");
+		System.out.println(list);
+		
 	}
 
 }

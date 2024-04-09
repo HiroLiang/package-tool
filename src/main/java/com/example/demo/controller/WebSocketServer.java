@@ -17,8 +17,12 @@ import jakarta.websocket.server.ServerEndpoint;
 @ServerEndpoint("/compiler")
 public class WebSocketServer {
 	
+	private static GitService gitService;
+	
 	@Autowired
-	private GitService gitService;
+	public void setGitService (GitService gitService) {
+		WebSocketServer.gitService = gitService;
+	}
 	
 	@OnOpen
 	public void startCompile(Session session) {
@@ -34,8 +38,12 @@ public class WebSocketServer {
 		}
 		switch (split[0]) {
 		case "dap-api": 
-			System.out.println(split[1]);
-			System.out.println(split[1].length());
+			boolean result = gitService.compileDapProject(split[1], split[2], split[3], split[4]);
+			if(result) {
+				send(session, "y");
+			}else {
+				send(session, "n");
+			}
 			break;
 		}
 	}
