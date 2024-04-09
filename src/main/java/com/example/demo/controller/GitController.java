@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,31 @@ public class GitController {
 		if(result)
 			return 0;
 		return 1;
+	}
+	
+	@GetMapping("/branch/{project}/user/{gitAccount}")
+	public List<String> getBranchs(@PathVariable String project, @PathVariable String gitAccount) {
+		List<String> result = new ArrayList<String>();
+		switch (project) {
+		case "dap-api":
+			result = gitService.getBranchs(project, gitAccount);
+			break;
+		case "dap-api-admin":
+			result = gitService.getBranchs("dap-api\\" + project, gitAccount);
+			break;
+		}
+		return result;
+	}
+	
+	@GetMapping("/compile/{project}/branch/{branch}")
+	public void compileProject(@PathVariable String project, @PathVariable String branch) {
+		switch (project) {
+		case "dap-api":
+			String[] split = branch.split(",split,");
+			System.out.println(split[0]);
+			System.out.println(split[1]);
+			break;
+		}
 	}
 
 }

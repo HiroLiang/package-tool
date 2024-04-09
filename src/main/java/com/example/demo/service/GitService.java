@@ -37,10 +37,13 @@ public class GitService {
 		String gitPath = git_store_path + "\\" + user.getGitAccount();
 		
 		boolean isCloned = GitUtil.gitClone(dapUrl, gitPath + "\\dap-api");
-		if(isCloned)
+		if(isCloned) {
+			System.out.println("clone dap-api success.");
 			GitUtil.gitClone(dapAdminUrl, gitPath + "\\dap-api\\dap-api-admin");
+		}
 		
 		if(isCloned) {
+			System.out.println("clone dap-api-admin success.");
 			GitRepository newProject = new GitRepository();
 			newProject.setProjectName("dap-api");
 			newProject.setOwner(user);
@@ -48,6 +51,27 @@ public class GitService {
 			return true;
 		}
 		return false;
+	}
+	
+	public boolean compileDapProject(String gitAccount, String accessToken, String dapBranch, String adminBranch) {
+		boolean result = false;
+		String gitPath = git_store_path + "\\" + gitAccount;
+		
+		String dapRemote = getGitUrl(gitAccount, accessToken, dap_api_path);
+		result = GitUtil.gitCheckout(dapBranch, gitPath + "\\dap-api", dapRemote);
+		
+		String adminRemote = getGitUrl(gitAccount, accessToken, dap_admin_api_path);
+		result = GitUtil.gitCheckout(dapBranch, gitPath + "\\dap-api\\dap-api-admin", adminRemote);
+		
+		
+		
+		return result;
+	}
+	
+	public List<String> getBranchs(String project, String gitAccount){
+		String gitPath = git_store_path + "\\" + gitAccount + "\\" + project;
+		String script = "git branch -r";
+		return GitUtil.processShell(script, "", gitPath);
 	}
 	
 	private String getGitUrl(String account, String token, String path) {

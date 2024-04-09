@@ -23,17 +23,33 @@ public class GitUtil {
 		}
 		return result;
 	}
+	
+	public static boolean gitCheckout(String branchs, String path, String remote) {
+		String script = "git remote set-url origin " + remote;
+		System.out.println("process : " + script);
+		List<String> result = processShell(script, "", path);
+		if(result.size() == 0)
+			return false;
+		
+		script = "git checkout -b " + branchs + " origin/" + branchs;
+		System.out.println("process : " + script);
+		result = processShell(script, "", path);
+		if(result.size() == 0)
+			return false;
+		
+		return true;
+	}
 
 	public static boolean gitClone(String url, String path) {
 		String script = "git clone " + url + " " + path;
 		System.out.println("process : " + script);
 		List<String> result = processShell(script, "");
-		if(result == null)
+		if(result.size() == 0)
 			return false;
 		return true;
 	}
 
-	private static List<String> processShell(String script, String args, String... workspace) {
+	public static List<String> processShell(String script, String args, String... workspace) {
 		List<String> result = new ArrayList<String>();
 		String[] cmd = new String[] { "powershell.exe", "-c", script };
 
@@ -57,7 +73,7 @@ public class GitUtil {
 
 			int status = process.waitFor();
 			if(status != 0)
-				return null;
+				return new ArrayList<String>();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
