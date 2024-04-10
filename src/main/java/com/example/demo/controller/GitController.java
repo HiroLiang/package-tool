@@ -53,7 +53,7 @@ public class GitController {
 			result = gitService.getBranchs(project, user);
 			break;
 		case "dap-api-admin":
-			result = gitService.getBranchs("dap-api\\" + project, user);
+			result = gitService.getBranchs("dap-api/" + project, user);
 			break;
 		}
 		return result;

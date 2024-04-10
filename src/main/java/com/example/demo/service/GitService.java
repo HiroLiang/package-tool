@@ -37,12 +37,12 @@ public class GitService {
 		String dapUrl = getGitUrl(user.getGitAccount(), user.getAccessToken(), dap_api_path);
 		String dapAdminUrl = getGitUrl(user.getGitAccount(), user.getAccessToken(), dap_admin_api_path);
 
-		String gitPath = git_store_path + "\\" + user.getGitAccount();
+		String gitPath = git_store_path + "/" + user.getGitAccount();
 
-		boolean isCloned = GitUtil.gitClone(dapUrl, gitPath + "\\dap-api");
+		boolean isCloned = GitUtil.gitClone(dapUrl, gitPath + "/dap-api");
 		if (isCloned) {
 			System.out.println("clone dap-api success.");
-			GitUtil.gitClone(dapAdminUrl, gitPath + "\\dap-api\\dap-api-admin");
+			GitUtil.gitClone(dapAdminUrl, gitPath + "/dap-api/dap-api-admin");
 		}
 
 		if (isCloned) {
@@ -58,39 +58,30 @@ public class GitService {
 
 	public boolean compileDapProject(String gitAccount, String accessToken, String dapBranch, String adminBranch) {
 		boolean result = false;
-		String gitPath = git_store_path + "\\" + gitAccount;
+		String gitPath = git_store_path + "/" + gitAccount;
 
 		String dapRemote = getGitUrl(gitAccount, accessToken, dap_api_path);
-		GitUtil.gitCheckout(dapBranch, gitPath + "\\dap-api", dapRemote);
+		GitUtil.gitCheckout(dapBranch, gitPath + "/dap-api", dapRemote);
 
 		String adminRemote = getGitUrl(gitAccount, accessToken, dap_admin_api_path);
-		GitUtil.gitCheckout(dapBranch, gitPath + "\\dap-api\\dap-api-admin", adminRemote);
+		GitUtil.gitCheckout(dapBranch, gitPath + "/dap-api/dap-api-admin", adminRemote);
 
-		result = GitUtil.compileProject(gitPath + "\\dap-api");
+		result = GitUtil.compileProject(gitPath + "/dap-api");
 		
-		String delScript = "Remove-Item -Path " + war_store_path + "\\* -Recurse -Force";
+		String delScript = "rm -rf " + war_store_path + "/*";
 		GitUtil.processShell(delScript, "");
 		
 		GitUtil.createFolder(war_store_path);
 
 		String[] modules = new String[] { "dap-api-admin", "dap-frontend", "dap-batch", "dap-loan", "dap-test" };
 		if(result)
-			GitUtil.collectWar(gitPath + "\\dap-api", war_store_path, modules);
+			GitUtil.collectWar(gitPath + "/dap-api", war_store_path, modules);
 
 		return result;
 	}
 
 	public List<String> getBranchs(String project, UserData user) {
-		String gitPath = git_store_path + "\\" + user.getGitAccount() + "\\" + project;
-//		String remote = "";
-//		if("dap-api".equals(project))
-//			remote = getGitUrl(user.getGitAccount(), user.getAccessToken(), dap_api_path);
-//		if("dap-api\\dap-api-admin".equals(project))
-//			remote = getGitUrl(user.getGitAccount(), user.getAccessToken(), dap_admin_api_path);
-//		String setUrlScript = "git remote set-url origin " + remote;
-//		System.out.println("process : " + setUrlScript);
-//		GitUtil.processShell(setUrlScript, "", git_store_path + "\\" + project);
-		
+		String gitPath = git_store_path + "/" + user.getGitAccount() + "/" + project;
 		String script = "git branch -r";
 		List<String> result = GitUtil.processShell(script, "", gitPath);
 		if (result == null)

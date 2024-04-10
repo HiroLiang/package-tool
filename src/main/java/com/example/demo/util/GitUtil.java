@@ -11,7 +11,7 @@ import com.example.demo.controller.WebSocketServer;
 public class GitUtil {
 
 	public static boolean createFolder(String path) {
-		String cmd = "cmd.exe /c mkdir " + path;
+		String cmd = "/bin/sh -c mkdir -p " + path;
 
 		boolean result = false;
 		try {
@@ -64,8 +64,8 @@ public class GitUtil {
 	
 	public static void collectWar(String gitPath, String warPath, String[] modules) {
 		for (String module : modules) {
-			String script = "move " + gitPath + "\\" + module + "\\target\\*.war " + 
-					warPath + "\\" + module + ".war";
+			String script = "mv " + gitPath + "/" + module + "/target/*.war " + 
+					warPath + "/" + module + ".war";
 			System.out.println("process : " + script);
 			List<String> result = processShell(script, "");
 			System.out.println(result);
@@ -74,7 +74,7 @@ public class GitUtil {
 
 	public static List<String> processShell(String script, String args, String... workspace) {
 		List<String> result = new ArrayList<String>();
-		String[] cmd = new String[] { "powershell.exe", "-c", script };
+		String[] cmd = new String[] { "/bin/sh", "-c", script };
 
 		File dir = null;
 		if (workspace.length > 0) {
@@ -106,12 +106,6 @@ public class GitUtil {
 		}
 
 		return result;
-	}
-
-	public static void main(String[] args) {
-		List<String> list = processShell("Remove-Item -Path  'D:\\docker\\git\\base\\targets\\*' -Recurse -Force","");
-		System.out.println(list);
-		
 	}
 
 }
