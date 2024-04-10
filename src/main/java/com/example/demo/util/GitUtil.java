@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.demo.controller.WebSocketServer;
+
 public class GitUtil {
 
 	public static boolean createFolder(String path) {
@@ -54,7 +56,7 @@ public class GitUtil {
 	public static boolean compileProject(String path) {
 		String script = "mvn clean install -am -DskipTests";
 		System.out.println("process : " + script);
-		List<String> result = processShell(script, "", path);
+		List<String> result = processShell(script, "", path, "show");
 		if(result == null)
 			return false;
 		return true;
@@ -89,6 +91,10 @@ public class GitUtil {
 			String line = "";
 			while ((line = reader.readLine()) != null) {
 				result.add(line);
+				if(workspace.length > 1) {					
+					if(workspace[1] == "show")
+						WebSocketServer.session.getBasicRemote().sendText("{show}" + line);
+				}
 				System.out.println(line);
 			}
 

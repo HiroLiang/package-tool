@@ -80,8 +80,17 @@ public class GitService {
 		return result;
 	}
 
-	public List<String> getBranchs(String project, String gitAccount) {
-		String gitPath = git_store_path + "\\" + gitAccount + "\\" + project;
+	public List<String> getBranchs(String project, UserData user) {
+		String gitPath = git_store_path + "\\" + user.getGitAccount() + "\\" + project;
+//		String remote = "";
+//		if("dap-api".equals(project))
+//			remote = getGitUrl(user.getGitAccount(), user.getAccessToken(), dap_api_path);
+//		if("dap-api\\dap-api-admin".equals(project))
+//			remote = getGitUrl(user.getGitAccount(), user.getAccessToken(), dap_admin_api_path);
+//		String setUrlScript = "git remote set-url origin " + remote;
+//		System.out.println("process : " + setUrlScript);
+//		GitUtil.processShell(setUrlScript, "", git_store_path + "\\" + project);
+		
 		String script = "git branch -r";
 		List<String> result = GitUtil.processShell(script, "", gitPath);
 		if (result == null)

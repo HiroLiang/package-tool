@@ -47,12 +47,13 @@ public class GitController {
 	@GetMapping("/branch/{project}/user/{gitAccount}")
 	public List<String> getBranchs(@PathVariable String project, @PathVariable String gitAccount) {
 		List<String> result = new ArrayList<String>();
+		UserData user = userService.getUser(gitAccount);
 		switch (project) {
 		case "dap-api":
-			result = gitService.getBranchs(project, gitAccount);
+			result = gitService.getBranchs(project, user);
 			break;
 		case "dap-api-admin":
-			result = gitService.getBranchs("dap-api\\" + project, gitAccount);
+			result = gitService.getBranchs("dap-api\\" + project, user);
 			break;
 		}
 		return result;

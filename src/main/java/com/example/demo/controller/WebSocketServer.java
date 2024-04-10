@@ -19,6 +19,8 @@ public class WebSocketServer {
 	
 	private static GitService gitService;
 	
+	public static Session session;
+	
 	@Autowired
 	public void setGitService (GitService gitService) {
 		WebSocketServer.gitService = gitService;
@@ -27,6 +29,7 @@ public class WebSocketServer {
 	@OnOpen
 	public void startCompile(Session session) {
 		System.out.println("socket open");
+		WebSocketServer.session = session;
 	}
 	
 	@OnMessage
@@ -40,9 +43,9 @@ public class WebSocketServer {
 		case "dap-api": 
 			boolean result = gitService.compileDapProject(split[1], split[2], split[3], split[4]);
 			if(result) {
-				send(session, "y");
+				send("y");
 			}else {
-				send(session, "n");
+				send("n");
 			}
 			break;
 		}
@@ -53,9 +56,9 @@ public class WebSocketServer {
 		System.out.println("socket close");
 	}
 	
-	public void send(Session session, String msg) {
+	public void send(String msg) {
 		try {
-			session.getBasicRemote().sendText(msg);
+			WebSocketServer.session.getBasicRemote().sendText(msg);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
