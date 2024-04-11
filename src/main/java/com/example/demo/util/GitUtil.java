@@ -74,7 +74,7 @@ public class GitUtil {
 
 	public static List<String> processShell(String script, String args, String... workspace) {
 		List<String> result = new ArrayList<String>();
-		String[] cmd = new String[] { "/bin/sh", "-c", script };
+		String[] cmd = new String[] { "/bin/sh", "-c", "export JAVA_HOME=/usr/lib/jvm/java-11-openjdk && " + script };
 
 		File dir = null;
 		if (workspace.length > 0) {
