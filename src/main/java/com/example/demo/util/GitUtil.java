@@ -92,10 +92,13 @@ public class GitUtil {
 			while ((line = reader.readLine()) != null) {
 				result.add(line);
 				if(workspace.length > 1) {					
-					if(workspace[1] == "show")
-						WebSocketServer.session.getBasicRemote().sendText("{show}" + line);
+					if(workspace[1] == "show") {
+						if(!line.startsWith("Progress"))
+							WebSocketServer.session.getBasicRemote().sendText("{show}" + line);						
+					}
 				}
-				System.out.println(line);
+				if(!line.startsWith("Progress"))
+					System.out.println(line);
 			}
 
 			int status = process.waitFor();
