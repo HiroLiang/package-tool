@@ -1,11 +1,21 @@
 package com.example.demo.controller;
 
 import java.io.IOException;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.example.demo.model.dto.ProjectBranchDto;
+import com.example.demo.model.entity.GitProject;
+import com.example.demo.model.entity.UserData;
 import com.example.demo.service.GitService;
+import com.example.demo.service.ProjectService;
+import com.example.demo.service.UserService;
+import com.example.demo.util.JsonUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnMessage;
@@ -17,13 +27,19 @@ import jakarta.websocket.server.ServerEndpoint;
 @ServerEndpoint("/compiler")
 public class WebSocketServer {
 	
+	private static UserService userService;
+	
 	private static GitService gitService;
+	
+	private static ProjectService projectService;
 	
 	public static Session session;
 	
 	@Autowired
-	public void setGitService (GitService gitService) {
+	public void setGitService (UserService userService, GitService gitService, ProjectService projectService) {
+		WebSocketServer.userService = userService;
 		WebSocketServer.gitService = gitService;
+		WebSocketServer.projectService = projectService;
 	}
 	
 	@OnOpen
@@ -32,6 +48,9 @@ public class WebSocketServer {
 		WebSocketServer.session = session;
 	}
 	
+	/*
+	 *  split : [0] - mission name
+	 */
 	@OnMessage
 	public void getMission(String msg, Session session) {
 		System.out.println(msg);
@@ -40,14 +59,14 @@ public class WebSocketServer {
 		    split[i] = split[i].replace(" ", "").replace("\t", "");
 		}
 		switch (split[0]) {
-		case "dap-api": 
-			boolean result = gitService.compileDapProject(split[1], split[2], split[3], split[4]);
-			if(result) {
-				send("y");
-			}else {
-				send("n");
-			}
-			break;
+		// split : [1] - projectName , [2] - gitAccount , [3] - Base64 : [{gitProject: 'name1', branchName: 'branch1'},..]
+		case "compile": 
+			UserData user = userService.getUser(split[2]);
+			GitProject project = projectService.getProject(split[1]);
+			Map<String,String> map = getBranchMap(split[3]);
+			
+			boolean result = gitService.compileProject(user, project, map);
+			send(result ? "y" : "n");
 		}
 	}
 	
@@ -62,6 +81,24 @@ public class WebSocketServer {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	// ------------------------------------------------------------------------------------------------------
+	
+	private Map<String, String> getBranchMap(String branchBase64) {
+		Map<String, String> map = new HashMap<>();
+		
+		String json = new String(Base64.getDecoder().decode(branchBase64));
+		try {
+			ProjectBranchDto[] dtoList = JsonUtil.fromJson(json, ProjectBranchDto[].class);
+			for (ProjectBranchDto dto : dtoList) {
+				map.put(dto.getName(), dto.getBranch());
+			}
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		
+		return map;
 	}
 
 }

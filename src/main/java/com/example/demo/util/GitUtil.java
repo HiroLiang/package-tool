@@ -2,16 +2,32 @@ package com.example.demo.util;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.example.demo.controller.WebSocketServer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+import com.example.demo.controller.WebSocketServer;
+import com.example.demo.model.enumerate.CmdLineProcess;
+
+@Component
 public class GitUtil {
 
+	@Value("${file.separator}")
+	private static String sep;
+	@Value("${server.system.os}")
+	private static String os;
+
 	public static boolean createFolder(String path) {
-		String cmd = "cmd.exe /c mkdir " + path;
+		String cmd = null;
+		if ("windows".equals(os)) {
+			cmd = "cmd.exe /c mkdir " + path;
+		} else if ("linux".equals(os)) {
+			cmd = "/bin/sh -c mkdir -p " + path;
+		}
 
 		boolean result = false;
 		try {
@@ -26,19 +42,27 @@ public class GitUtil {
 		return result;
 	}
 	
+	public static List<String> getBranchs(String projectLocation) {
+		String script = "git branch -r";
+		List<String> branchs = processShell(script, "", projectLocation);
+		if(branchs != null)
+			return branchs;
+		return new ArrayList<String>();
+	}
+
 	public static void gitCheckout(String branchs, String path, String remote) {
 		String script = "git remote set-url origin " + remote;
 		System.out.println("process : " + script);
 		processShell(script, "", path);
-		
+
 		script = "git checkout -b " + branchs + " origin/" + branchs;
 		System.out.println("process : " + script);
 		processShell(script, "", path);
-		
+
 		script = "git checkout " + branchs;
 		System.out.println("process : " + script);
 		processShell(script, "", path);
-		
+
 		script = "git merge origin/" + branchs;
 		System.out.println("process : " + script);
 		processShell(script, "", path);
@@ -46,75 +70,108 @@ public class GitUtil {
 
 	public static boolean gitClone(String url, String path) {
 		String script = "git clone " + url + " " + path;
-		System.out.println("process : " + script);
+		System.out.println("process script : " + script);
 		List<String> result = processShell(script, "");
-		if(result == null)
+		if (result == null)
 			return false;
 		return true;
 	}
-	
+
 	public static boolean compileProject(String path) {
 		String script = "mvn clean install -am -DskipTests";
 		System.out.println("process : " + script);
 		List<String> result = processShell(script, "", path, "show");
-		if(result == null)
+		if (result == null)
 			return false;
 		return true;
 	}
+
+	public static void delFolder(String path) {
+		String script = null;
+		if("windows".equals(os))
+			script = "rmdir /s /q \"" + path + "\"" ;
+		if("linux".equals(os))
+			script = "rm -rf \"" + path + "\"";
+		processShell(script, "");
+	}
 	
-	public static void collectWar(String gitPath, String warPath, String[] modules) {
-		for (String module : modules) {
-			String script = "move " + gitPath + "\\" + module + "\\target\\*.war " + 
-					warPath + "\\" + module + ".war";
-			System.out.println("process : " + script);
-			List<String> result = processShell(script, "");
-			System.out.println(result);
-		}
+	public static void collectAllWars(String gitPath, String warPath) {
+		String script = null;
+		if("windows".equals(os))
+			script = "for /r \"" + gitPath + "\" %f in (*.war) "
+					+ "do @move \"%f\" \"" + warPath + "\"" ;
+		if("linux".equals(os))
+			script = "find \"" + gitPath + "\" -path \"*/target/*.war\" "
+					+ "-exec mv {} \"" + warPath + "\" \\;" ;
+		System.out.println("process : " + script);
+		
+		List<String> result = processShell(script, "");
+		System.out.println(result);
 	}
 
-	public static List<String> processShell(String script, String args, String... workspace) {
-		List<String> result = new ArrayList<String>();
-		String[] cmd = new String[] { "powershell.exe", "-c", script };
+	/*
+	 * oprions : [0] - work place , [1] - tag to specific process
+	 */
+	public static List<String> processShell(String script, String args, String... options) {
 
-		File dir = null;
-		if (workspace.length > 0) {
-			if (workspace[0] != null) {
-				dir = new File(workspace[0]);
-				System.out.println(workspace[0]);
-			}
-		}
-
+		String[] cmd = getCmd(script);
+		File dir = getWorkspace(options);
+		
 		try {
-			Process process = Runtime.getRuntime().exec(cmd, null, dir);
-
-			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line = "";
-			while ((line = reader.readLine()) != null) {
-				result.add(line);
-				if(workspace.length > 1) {					
-					if(workspace[1] == "show") {
-						if(!line.startsWith("Progress"))
-							WebSocketServer.session.getBasicRemote().sendText("{show}" + line);						
-					}
-				}
-				if(!line.startsWith("Progress"))
-					System.out.println(line);
-			}
-
-			int status = process.waitFor();
-			if(status != 0)
-				return null;
-		} catch (Exception e) {
+			return doCmd(cmd, dir, options);
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
+		return null;
 
-		return result;
 	}
 
-	public static void main(String[] args) {
-		List<String> list = processShell("Remove-Item -Path  'D:\\docker\\git\\base\\targets\\*' -Recurse -Force","");
-		System.out.println(list);
-		
+	// ------------------------------------------------------------------------------------------------------
+
+	private static String[] getCmd(String script) {
+		if ("windows".equals(os))
+			return new String[] { "cmd.exe", "/c", script };
+		return new String[] { "/bin/sh", "-c", script };
+	}
+
+	private static File getWorkspace(String[] options) {
+		if (options.length > 0) {
+			if (options[0] != null)
+				return new File(options[0]);
+		}
+		return null;
+	}
+
+	private static List<String> doCmd(String[] cmd, File workDir, String[] options) throws IOException, InterruptedException {
+		List<String> result = new ArrayList<String>();
+
+		Process process = Runtime.getRuntime().exec(cmd, null, workDir);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		String line = "";
+		while ((line = reader.readLine()) != null) {
+			result.add(line);
+			processLine(line, options);
+			
+			if (!line.startsWith("Progress"))
+				System.out.println(line);
+		}
+		int status = process.waitFor();
+		if (status != 0)
+			return null;
+
+		return result;
+
+	}
+	
+	private static void processLine(String line, String[] options) throws IOException {
+		if(options.length > 1) {
+			switch(CmdLineProcess.fromOption(options[1])) {
+			case SEND_CLIENT:
+				if (!line.startsWith("Progress"))
+					WebSocketServer.session.getBasicRemote().sendText("{show}" + line);
+				break;
+			}
+		}
 	}
 
 }

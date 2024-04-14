@@ -8,12 +8,15 @@ import org.springframework.stereotype.Service;
 import com.example.demo.model.entity.UserData;
 import com.example.demo.model.repository.UserDataRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class UserService {
 
 	@Autowired
 	private UserDataRepository userDataRepository;
 
+	@Transactional
 	public UserData addUser(UserData user) {
 		Optional<UserData> optional = userDataRepository.findByGitAccount(user.getGitAccount());
 		if(optional.isPresent())
@@ -36,6 +39,7 @@ public class UserService {
 		return null;
 	}
 
+	@Transactional
 	public UserData updateUser(Integer id, UserData data) {
 		UserData user = getUser(id);
 		if (user != null && id == data.getId())

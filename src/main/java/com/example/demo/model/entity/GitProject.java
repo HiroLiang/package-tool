@@ -11,6 +11,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -21,25 +23,25 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "user_data")
-public class UserData {
+@Table(name = "git_project")
+public class GitProject {
 	
 	@Id
 	@Column(name = "ID", columnDefinition = "INT")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-	
-	@Column(name = "GIT_ACCOUNT", columnDefinition = "VARCHAR(50)", unique = true)
-	private String gitAccount;
-	
-	@Column(name = "ACCESS_TOKEN", columnDefinition = "VARCHAR(225)")
-	private String accessToken;
-	
-	@Column(name = "USER_NAME", columnDefinition = "VARCHAR(50)")
-	private String userName;
-	
-	@JsonIgnore
-	@OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
-	private List<UserProject> projects = new ArrayList<>();
 
+	@Column(name = "NAME", columnDefinition = "VARCHAR(50)", unique = true)
+	private String name;
+	
+	@Column(name = "URL", columnDefinition = "VARCHAR(225)")
+	private String url;
+	
+	@ManyToOne
+	@JsonIgnore
+	@JoinColumn(name = "PARENT_ID", referencedColumnName = "ID")
+	private GitProject parent;
+	
+	@OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+	private List<GitProject> children = new ArrayList<>();
 }
