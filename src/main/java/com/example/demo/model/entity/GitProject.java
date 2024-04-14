@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,11 +38,14 @@ public class GitProject {
 	@Column(name = "URL", columnDefinition = "VARCHAR(225)")
 	private String url;
 	
+	@Column(name = "JDK", columnDefinition = "VARCHAR(25)")
+	private String jdk;
+	
 	@ManyToOne
 	@JsonIgnore
 	@JoinColumn(name = "PARENT_ID", referencedColumnName = "ID")
 	private GitProject parent;
 	
-	@OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "parent", cascade = CascadeType.ALL)
 	private List<GitProject> children = new ArrayList<>();
 }

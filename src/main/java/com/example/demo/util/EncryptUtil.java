@@ -13,8 +13,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class EncryptUtil {
 	
-	@Value("data.encrypt.key")
-	private static String keyString = "ijoi2oi3iofd9ew8jfjin3ie920eeiwo";
+	private static String keyString;
+	
+	@Value("${data.encrypt.key}")
+	public void setKeyString(String keyString) {
+		EncryptUtil.keyString = keyString;
+	}
 	
 	public static String encrypt(String data, String keyBase64) {
 		String result = null;

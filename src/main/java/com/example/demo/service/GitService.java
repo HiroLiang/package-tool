@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,13 +20,18 @@ public class GitService {
 	@Value("${war.store.path}")
 	private String war_store_path;
 	@Value("${file.separator}")
-	private static String sep;
+	private String sep;
 	
-	public boolean cloneProject(GitProject project, UserData user, String projectPath) {
-		projectPath = projectPath + sep + project.getName();
+	@Autowired
+	private UserService userService;
+	@Autowired
+	private ProjectService projectService;
+	
+	public boolean cloneProject(GitProject project, UserData user, String currenPath) {
+		String projectPath = currenPath + sep + project.getName();
 		
 		String url = getGitUrl(user.getGitAccount(), user.getAccessToken(), project.getUrl());
-		String path = git_store_path + projectPath;
+		String path = git_store_path + sep + user.getGitAccount() + sep + projectPath;
 		boolean result = GitUtil.gitClone(url, path);
 		if(!result)
 			return result;
@@ -41,19 +47,22 @@ public class GitService {
 		return result;
 	}
 	
-	public GitProjectBranchs getBranchs(UserData user, GitProject project) {
+	public GitProjectBranchs getBranchs(UserData user, GitProject project, String path) {
+		String projectPath = path + sep + project.getName();
 		GitProjectBranchs result = new GitProjectBranchs();
 		
 		result.setName(project.getName());
-		result.setBranchs(getBranchs(user.getGitAccount(), project.getName()));
+		result.setBranchs(getBranchs(user.getGitAccount(), projectPath));
 		for (GitProject child : project.getChildren()) {
-			result.getChildern().add(getBranchs(user, child));
+			result.getChildren().add(getBranchs(user, child, projectPath));
 		}
 		
 		return result;
 	}
 
-	public boolean compileProject(UserData user, GitProject project, Map<String,String> map) {
+	public boolean compileProject(String gitAccoun, String projectName, Map<String,String> map) {
+		UserData user = userService.getUser(gitAccoun);
+		GitProject project = projectService.getProject(projectName);
 		String basePath = git_store_path + sep + user.getGitAccount();
 		checkoutProject(user, project, map, basePath);
 		
@@ -72,8 +81,8 @@ public class GitService {
 		return "https://" + account + ":" + token + "@" + path;
 	}
 	
-	private List<String> getBranchs(String gitAccount, String projectName) {
-		String location = git_store_path + sep + gitAccount + sep + projectName;
+	private List<String> getBranchs(String gitAccount, String projectPath) {
+		String location = git_store_path + sep + gitAccount + sep + projectPath;
 		return GitUtil.getBranchs(location);
 	}
 	

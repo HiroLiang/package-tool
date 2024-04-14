@@ -61,11 +61,9 @@ public class WebSocketServer {
 		switch (split[0]) {
 		// split : [1] - projectName , [2] - gitAccount , [3] - Base64 : [{gitProject: 'name1', branchName: 'branch1'},..]
 		case "compile": 
-			UserData user = userService.getUser(split[2]);
-			GitProject project = projectService.getProject(split[1]);
 			Map<String,String> map = getBranchMap(split[3]);
 			
-			boolean result = gitService.compileProject(user, project, map);
+			boolean result = gitService.compileProject(split[2], split[1], map);
 			send(result ? "y" : "n");
 		}
 	}
@@ -98,6 +96,7 @@ public class WebSocketServer {
 			e.printStackTrace();
 		}
 		
+		System.out.println(map);
 		return map;
 	}
 

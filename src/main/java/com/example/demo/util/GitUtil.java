@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -16,17 +17,38 @@ import com.example.demo.model.enumerate.CmdLineProcess;
 @Component
 public class GitUtil {
 
-	@Value("${file.separator}")
 	private static String sep;
-	@Value("${server.system.os}")
 	private static String os;
+	
+	private static String java8;
+	private static String java11;
+	
+	@Value("${file.separator}")
+    public void setSep(String sep) {
+        GitUtil.sep = sep;
+    }
+    
+    @Value("${server.system.os}")
+    public void setOs(String os) {
+        GitUtil.os = os;
+    }
+    
+    @Value("${mvn.jdk8.path}")
+    public void setJava8(String java8) {
+    	GitUtil.java8 = java8;
+    }
+    
+    @Value("${mvn.jdk11.path}")
+    public void setJava11(String java11) {
+    	GitUtil.java11 = java11;
+    }
 
 	public static boolean createFolder(String path) {
 		String cmd = null;
 		if ("windows".equals(os)) {
-			cmd = "cmd.exe /c mkdir " + path;
+			cmd = "powershell.exe -c mkdir \"" + path + "\"";
 		} else if ("linux".equals(os)) {
-			cmd = "/bin/sh -c mkdir -p " + path;
+			cmd = "/bin/sh -c mkdir -p \"" + path + "\"";
 		}
 
 		boolean result = false;
@@ -44,6 +66,7 @@ public class GitUtil {
 	
 	public static List<String> getBranchs(String projectLocation) {
 		String script = "git branch -r";
+		System.out.println("process : " + script);
 		List<String> branchs = processShell(script, "", projectLocation);
 		if(branchs != null)
 			return branchs;
@@ -80,7 +103,7 @@ public class GitUtil {
 	public static boolean compileProject(String path) {
 		String script = "mvn clean install -am -DskipTests";
 		System.out.println("process : " + script);
-		List<String> result = processShell(script, "", path, "show");
+		List<String> result = processShell(script, "", path, "send-client");
 		if (result == null)
 			return false;
 		return true;
@@ -89,7 +112,7 @@ public class GitUtil {
 	public static void delFolder(String path) {
 		String script = null;
 		if("windows".equals(os))
-			script = "rmdir /s /q \"" + path + "\"" ;
+			script = "rm \"" + path + "\" -Recurse -Force";
 		if("linux".equals(os))
 			script = "rm -rf \"" + path + "\"";
 		processShell(script, "");
@@ -98,8 +121,8 @@ public class GitUtil {
 	public static void collectAllWars(String gitPath, String warPath) {
 		String script = null;
 		if("windows".equals(os))
-			script = "for /r \"" + gitPath + "\" %f in (*.war) "
-					+ "do @move \"%f\" \"" + warPath + "\"" ;
+			 script = "Get-ChildItem -Path \"" + gitPath + "\" -Recurse -Filter *.war | "
+			 		+ "ForEach-Object { Move-Item -Path $_.FullName -Destination \"" + warPath + "\" }";
 		if("linux".equals(os))
 			script = "find \"" + gitPath + "\" -path \"*/target/*.war\" "
 					+ "-exec mv {} \"" + warPath + "\" \\;" ;
@@ -110,7 +133,7 @@ public class GitUtil {
 	}
 
 	/*
-	 * oprions : [0] - work place , [1] - tag to specific process
+	 * oprions : [0] - work place , [1] - java version ,[2] - tag to specific process
 	 */
 	public static List<String> processShell(String script, String args, String... options) {
 
@@ -130,8 +153,8 @@ public class GitUtil {
 
 	private static String[] getCmd(String script) {
 		if ("windows".equals(os))
-			return new String[] { "cmd.exe", "/c", script };
-		return new String[] { "/bin/sh", "-c", script };
+			return new String[] { "powershell.exe", "-c", script };
+		return new String[] { "/bin/sh", "-c", "export JAVA_HOME=" + GitUtil.java11 + " && ", script };
 	}
 
 	private static File getWorkspace(String[] options) {

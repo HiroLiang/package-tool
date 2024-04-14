@@ -42,7 +42,7 @@ public class UserService {
 	@Transactional
 	public UserData updateUser(Integer id, UserData data) {
 		UserData user = getUser(id);
-		if (user != null && id == data.getId())
+		if (user.getId() > 0 && id == data.getId())
 			return userDataRepository.save(data);
 		return user;
 	}

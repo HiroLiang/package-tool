@@ -16,6 +16,6 @@ public class GitProjectBranchs {
 	
 	private List<String> branchs = new ArrayList<>();
 	
-	private List<GitProjectBranchs> childern = new ArrayList<>();
+	private List<GitProjectBranchs> children = new ArrayList<>();
  
 }

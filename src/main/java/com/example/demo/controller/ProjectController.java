@@ -43,12 +43,12 @@ public class ProjectController {
 		return rs;
 	}
 	
-	@GetMapping("/branch/{project}/{gitAccount}")
+	@GetMapping("/branch/{projectName}/{gitAccount}")
 	public GitProjectBranchs getBranchs(@PathVariable String projectName, @PathVariable String gitAccount){
 		GitProject project = projectService.getProject(projectName);
 		UserData user = userService.getUser(gitAccount);
 		
-		return gitService.getBranchs(user, project);
+		return gitService.getBranchs(user, project, "");
 	}
 	
 	@PostMapping("/clone/{projectName}/{gitAccount}")
