@@ -9,11 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.example.demo.model.dto.ProjectBranchDto;
-import com.example.demo.model.entity.GitProject;
-import com.example.demo.model.entity.UserData;
 import com.example.demo.service.GitService;
-import com.example.demo.service.ProjectService;
-import com.example.demo.service.UserService;
 import com.example.demo.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -27,19 +23,13 @@ import jakarta.websocket.server.ServerEndpoint;
 @ServerEndpoint("/compiler")
 public class WebSocketServer {
 	
-	private static UserService userService;
-	
 	private static GitService gitService;
-	
-	private static ProjectService projectService;
 	
 	public static Session session;
 	
 	@Autowired
-	public void setGitService (UserService userService, GitService gitService, ProjectService projectService) {
-		WebSocketServer.userService = userService;
+	public void setGitService (GitService gitService) {
 		WebSocketServer.gitService = gitService;
-		WebSocketServer.projectService = projectService;
 	}
 	
 	@OnOpen

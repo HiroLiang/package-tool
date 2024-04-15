@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.example.demo.controller.WebSocketServer;
 import com.example.demo.model.enumerate.CmdLineProcess;
+import com.example.demo.model.enumerate.JavaVersion;
 
 @Component
 public class GitUtil {
@@ -100,10 +100,10 @@ public class GitUtil {
 		return true;
 	}
 
-	public static boolean compileProject(String path) {
+	public static boolean compileProject(String path, JavaVersion jdk) {
 		String script = "mvn clean install -am -DskipTests";
 		System.out.println("process : " + script);
-		List<String> result = processShell(script, "", path, "send-client");
+		List<String> result = processShell(script, "", jdk, path, "send-client");
 		if (result == null)
 			return false;
 		return true;
@@ -133,8 +133,22 @@ public class GitUtil {
 	}
 
 	/*
-	 * oprions : [0] - work place , [1] - java version ,[2] - tag to specific process
+	 * oprions : [0] - work place , [1] - tag to specific process
 	 */
+	public static List<String> processShell(String script, String args, JavaVersion jdk, String... options) {
+
+		String[] cmd = getCmd(script, jdk);
+		File dir = getWorkspace(options);
+		
+		try {
+			return doCmd(cmd, dir, options);
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+	
 	public static List<String> processShell(String script, String args, String... options) {
 
 		String[] cmd = getCmd(script);
@@ -151,10 +165,19 @@ public class GitUtil {
 
 	// ------------------------------------------------------------------------------------------------------
 
+	private static String[] getCmd(String script, JavaVersion jdk) {
+		if ("windows".equals(os))
+			return new String[] { "powershell.exe", "-c", 
+					"$env:JAVA_HOME='" + jdkPath(jdk) + "' ;", 
+					"$env:PATH=\"" + jdkPath(jdk) + "\\bin\" + $env:PATH ;"
+					, script };
+		return new String[] { "/bin/sh", "-c", "export JAVA_HOME=" + jdkPath(jdk) + " && ", script };
+	}
+	
 	private static String[] getCmd(String script) {
 		if ("windows".equals(os))
 			return new String[] { "powershell.exe", "-c", script };
-		return new String[] { "/bin/sh", "-c", "export JAVA_HOME=" + GitUtil.java11 + " && ", script };
+		return new String[] { "/bin/sh", "-c", script };
 	}
 
 	private static File getWorkspace(String[] options) {
@@ -196,5 +219,40 @@ public class GitUtil {
 			}
 		}
 	}
+	
+	private static String jdkPath(JavaVersion jdk) {
+		switch (jdk) {
+		case JAVA11: 
+			return GitUtil.java11;
+		case JAVA8:
+			return GitUtil.java8;
+		default:
+			return GitUtil.java11;
+		}
+	}
+	
+	// ------------------------------------------------------------------------------------------------------
+	
+	public static void main(String[] args) {
+		String script = "mvn -v";
+		List<String> list = testProcessShell(script, "");
+		System.out.println(list);
+	}
+	
+	public static List<String> testProcessShell(String script, String args, String... options) {
 
+		String[] cmd = new String[] { "powershell.exe", "-c", 
+				"$env:JAVA_HOME='C:\\systex\\tools\\JDK\\openlogic-openjdk-11.0.22+7-windows-x64' ;", 
+				"$env:PATH=\"C:\\systex\\tools\\JDK\\openlogic-openjdk-11.0.22+7-windows-x64\\bin\" + $env:PATH ;"
+				, script };
+		File dir = getWorkspace(options);
+		
+		try {
+			return doCmd(cmd, dir, options);
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+		return null;
+
+	}
 }

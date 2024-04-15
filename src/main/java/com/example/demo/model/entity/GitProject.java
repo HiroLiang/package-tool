@@ -3,11 +3,14 @@ package com.example.demo.model.entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.demo.model.enumerate.JavaVersion;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -38,8 +41,9 @@ public class GitProject {
 	@Column(name = "URL", columnDefinition = "VARCHAR(225)")
 	private String url;
 	
+	@Enumerated(EnumType.STRING)
 	@Column(name = "JDK", columnDefinition = "VARCHAR(25)")
-	private String jdk;
+	private JavaVersion jdk;
 	
 	@ManyToOne
 	@JsonIgnore

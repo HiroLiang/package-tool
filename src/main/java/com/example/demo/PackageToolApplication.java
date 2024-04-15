@@ -6,6 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.example.demo.model.entity.GitProject;
+import com.example.demo.model.enumerate.JavaVersion;
 import com.example.demo.model.repository.GitProjectRepository;
 
 @SpringBootApplication
@@ -24,14 +25,14 @@ public class PackageToolApplication implements CommandLineRunner{
 			GitProject dap_api = new GitProject();
 			dap_api.setName("dap-api");
 			dap_api.setUrl("git.systex.com/misystex/050_tbbbank/b05002204_tbb_asp/backend/dap-api.git");
-			dap_api.setJdk("11");
+			dap_api.setJdk(JavaVersion.JAVA11);
 			dap_api.setParent(null);
 			dap_api = gitProjectRepository.save(dap_api);
 			
 			GitProject dap_api_admin = new GitProject();
 			dap_api_admin.setName("dap-api-admin");
 			dap_api_admin.setUrl("git.systex.com/misystex/050_tbbbank/b05002204_tbb_asp/backend/dap-adi-admin.git");
-			dap_api_admin.setJdk("11");
+			dap_api_admin.setJdk(JavaVersion.JAVA11);
 			dap_api_admin.setParent(dap_api);
 			dap_api_admin = gitProjectRepository.save(dap_api_admin);
 		}

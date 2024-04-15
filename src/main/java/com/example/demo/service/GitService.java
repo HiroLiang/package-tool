@@ -66,7 +66,7 @@ public class GitService {
 		String basePath = git_store_path + sep + user.getGitAccount();
 		checkoutProject(user, project, map, basePath);
 		
-		boolean result = GitUtil.compileProject(basePath + sep + project.getName());
+		boolean result = GitUtil.compileProject(basePath + sep + project.getName(), project.getJdk());
 		
 		GitUtil.delFolder(war_store_path);
 		GitUtil.createFolder(war_store_path);
