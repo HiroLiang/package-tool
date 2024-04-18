@@ -47,6 +47,33 @@ public class ProjectService {
 		userProjectRepository.save(userProject);
 	}
 	
+	public GitProject addNewProject(GitProject project) {
+		return gitProjectRepository.save(project);
+	}
+	
+	public GitProject editProject(Integer id, GitProject project) {
+		Optional<GitProject> optional = gitProjectRepository.findById(id);
+		if(optional.isPresent()) {
+			GitProject gitProject = optional.get();
+			gitProject.setName(project.getName());
+			gitProject.setJdk(project.getJdk());
+			gitProject.setUrl(project.getUrl());
+			if(project.getChildren() != null)
+				setParent(project, project.getChildren());
+			gitProject.setChildren(project.getChildren());
+			return gitProjectRepository.save(gitProject);
+		}
+		return null;
+	}
+	
 	// ------------------------------------------------------------------------------------------------------
+	
+	private void setParent(GitProject parent, List<GitProject> children) {
+		for (GitProject child : children) {
+			child.setParent(parent);
+			if(child.getChildren() != null)
+				setParent(child, child.getChildren());
+		}
+	}
 	
 }

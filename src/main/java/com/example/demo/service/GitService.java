@@ -31,7 +31,7 @@ public class GitService {
 		String projectPath = currenPath + sep + project.getName();
 		
 		String url = getGitUrl(user.getGitAccount(), user.getAccessToken(), project.getUrl());
-		String path = git_store_path + sep + user.getGitAccount() + sep + projectPath;
+		String path = git_store_path + sep + user.getGitAccount() + projectPath;
 		boolean result = GitUtil.gitClone(url, path);
 		if(!result)
 			return result;
@@ -43,18 +43,19 @@ public class GitService {
 					return result;
 			}
 		}
-		System.out.println("Clone project : " + project.getName() + "success." );
+		System.out.println("Clone project : " + project.getName() + " success." );
 		return result;
 	}
 	
-	public GitProjectBranchs getBranchs(UserData user, GitProject project, String path) {
+	public GitProjectBranchs getBranches(UserData user, GitProject project, String path) {
+		System.out.println("get branches from project : " + project.getName());
 		String projectPath = path + sep + project.getName();
 		GitProjectBranchs result = new GitProjectBranchs();
 		
 		result.setName(project.getName());
 		result.setBranchs(getBranchs(user.getGitAccount(), projectPath));
 		for (GitProject child : project.getChildren()) {
-			result.getChildren().add(getBranchs(user, child, projectPath));
+			result.getChildren().add(getBranches(user, child, projectPath));
 		}
 		
 		return result;
@@ -82,7 +83,7 @@ public class GitService {
 	}
 	
 	private List<String> getBranchs(String gitAccount, String projectPath) {
-		String location = git_store_path + sep + gitAccount + sep + projectPath;
+		String location = git_store_path + sep + gitAccount + projectPath;
 		return GitUtil.getBranchs(location);
 	}
 	
