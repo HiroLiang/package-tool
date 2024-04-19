@@ -48,6 +48,8 @@ public class ProjectService {
 	}
 	
 	public GitProject addNewProject(GitProject project) {
+		if(project.getUrl().startsWith("https://"))
+			project.setUrl(project.getUrl().replace("https://", ""));
 		return gitProjectRepository.save(project);
 	}
 	
@@ -57,7 +59,7 @@ public class ProjectService {
 			GitProject gitProject = optional.get();
 			gitProject.setName(project.getName());
 			gitProject.setJdk(project.getJdk());
-			gitProject.setUrl(project.getUrl());
+			gitProject.setUrl(project.getUrl().replace("https://", ""));
 			if(project.getChildren() != null)
 				setParent(project, project.getChildren());
 			gitProject.setChildren(project.getChildren());

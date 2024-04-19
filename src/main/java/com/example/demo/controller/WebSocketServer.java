@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,7 +78,8 @@ public class WebSocketServer {
 	private Map<String, String> getBranchMap(String branchBase64) {
 		Map<String, String> map = new HashMap<>();
 		
-		String json = new String(Base64.getDecoder().decode(branchBase64));
+		String decodedStr = new String(Base64.getDecoder().decode(branchBase64));
+		String json = URLDecoder.decode(decodedStr, StandardCharsets.UTF_8).replace(" ", "").replace("\t", "");
 		try {
 			ProjectBranchDto[] dtoList = JsonUtil.fromJson(json, ProjectBranchDto[].class);
 			for (ProjectBranchDto dto : dtoList) {

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,29 +20,35 @@ public class GitUtil {
 
 	private static String sep;
 	private static String os;
-	
+
 	private static String java8;
 	private static String java11;
-	
+	private static String java17;
+
 	@Value("${file.separator}")
-    public void setSep(String sep) {
-        GitUtil.sep = sep;
-    }
-    
-    @Value("${server.system.os}")
-    public void setOs(String os) {
-        GitUtil.os = os;
-    }
-    
-    @Value("${mvn.jdk8.path}")
-    public void setJava8(String java8) {
-    	GitUtil.java8 = java8;
-    }
-    
-    @Value("${mvn.jdk11.path}")
-    public void setJava11(String java11) {
-    	GitUtil.java11 = java11;
-    }
+	public void setSep(String sep) {
+		GitUtil.sep = sep;
+	}
+
+	@Value("${server.system.os}")
+	public void setOs(String os) {
+		GitUtil.os = os;
+	}
+
+	@Value("${mvn.jdk8.path}")
+	public void setJava8(String java8) {
+		GitUtil.java8 = java8;
+	}
+
+	@Value("${mvn.jdk11.path}")
+	public void setJava11(String java11) {
+		GitUtil.java11 = java11;
+	}
+	
+	@Value("${mvn.java17.path}")
+	public void setJava17(String java17) {
+		GitUtil.java17 = java17;
+	}
 
 	public static boolean createFolder(String path) {
 		String cmd = null;
@@ -63,12 +70,12 @@ public class GitUtil {
 		}
 		return result;
 	}
-	
+
 	public static List<String> getBranchs(String projectLocation) {
 		String script = "git branch -r";
 		System.out.println("process : " + script);
 		List<String> branchs = processShell(script, "", projectLocation);
-		if(branchs != null)
+		if (branchs != null)
 			return branchs;
 		return new ArrayList<String>();
 	}
@@ -101,8 +108,10 @@ public class GitUtil {
 	}
 
 	public static boolean compileProject(String path, JavaVersion jdk) {
-		String script = "mvn clean install -am -DskipTests";
+		String script = "mvn -Dmaven.compiler.fork=true -Dmaven.compiler.executable=" + jdkPath(jdk) + sep + "bin" 
+				+ sep + "javac clean install -am -DskipTests";
 		System.out.println("process : " + script);
+		System.out.println("workplace : " + path);
 		List<String> result = processShell(script, "", jdk, path, "send-client");
 		if (result == null)
 			return false;
@@ -111,23 +120,22 @@ public class GitUtil {
 
 	public static void delFolder(String path) {
 		String script = null;
-		if("windows".equals(os))
+		if ("windows".equals(os))
 			script = "rm \"" + path + "\" -Recurse -Force";
-		if("linux".equals(os))
+		if ("linux".equals(os))
 			script = "rm -rf \"" + path + "\"";
 		processShell(script, "");
 	}
-	
+
 	public static void collectAllWars(String gitPath, String warPath) {
 		String script = null;
-		if("windows".equals(os))
-			 script = "Get-ChildItem -Path \"" + gitPath + "\" -Recurse -Filter *.war | "
-			 		+ "ForEach-Object { Move-Item -Path $_.FullName -Destination \"" + warPath + "\" }";
-		if("linux".equals(os))
-			script = "find \"" + gitPath + "\" -path \"*/target/*.war\" "
-					+ "-exec mv {} \"" + warPath + "\" \\;" ;
+		if ("windows".equals(os))
+			script = "Get-ChildItem -Path \"" + gitPath + "\" -Recurse -Filter *.war | "
+					+ "ForEach-Object { Move-Item -Path $_.FullName -Destination \"" + warPath + "\" }";
+		if ("linux".equals(os))
+			script = "find \"" + gitPath + "\" -path \"*/target/*.war\" " + "-exec mv {} \"" + warPath + "\" \\;";
 		System.out.println("process : " + script);
-		
+
 		List<String> result = processShell(script, "");
 		System.out.println(result);
 	}
@@ -138,24 +146,37 @@ public class GitUtil {
 	public static List<String> processShell(String script, String args, JavaVersion jdk, String... options) {
 
 		String[] cmd = getCmd(script, jdk);
+		List<String> cmdLog = new ArrayList<String>();
+		for (String str : cmd) {
+			cmdLog.add(str);
+		}
+		System.out.println("CMD : " + cmdLog);
 		File dir = getWorkspace(options);
 		
+		ProcessBuilder builder = new ProcessBuilder(cmd);
+		Map<String,String> env = builder.environment();
+		env.put("JAVA_HOME", jdkPath(jdk));
+		builder.directory(dir);
+
 		try {
-			return doCmd(cmd, dir, options);
+			return doCmd(builder, options);
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 		return null;
 
 	}
-	
+
 	public static List<String> processShell(String script, String args, String... options) {
 
 		String[] cmd = getCmd(script);
 		File dir = getWorkspace(options);
 		
+		ProcessBuilder builder = new ProcessBuilder(cmd);
+		builder.directory(dir);
+
 		try {
-			return doCmd(cmd, dir, options);
+			return doCmd(builder, options);
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -167,13 +188,11 @@ public class GitUtil {
 
 	private static String[] getCmd(String script, JavaVersion jdk) {
 		if ("windows".equals(os))
-			return new String[] { "powershell.exe", "-c", 
-					"$env:JAVA_HOME='" + jdkPath(jdk) + "' ;", 
-					"$env:PATH=\"" + jdkPath(jdk) + "\\bin\" + $env:PATH ;"
-					, script };
-		return new String[] { "/bin/sh", "-c", "export JAVA_HOME=" + jdkPath(jdk) + " && ", script };
+			return new String[] { "powershell.exe", "-c", "$env:JAVA_HOME='" + jdkPath(jdk) + "' ;",
+					"$env:PATH=\"" + jdkPath(jdk) + "\\bin\" + $env:PATH ;", script };
+		return new String[] { "/bin/sh", "-c", script};
 	}
-	
+
 	private static String[] getCmd(String script) {
 		if ("windows".equals(os))
 			return new String[] { "powershell.exe", "-c", script };
@@ -188,16 +207,17 @@ public class GitUtil {
 		return null;
 	}
 
-	private static List<String> doCmd(String[] cmd, File workDir, String[] options) throws IOException, InterruptedException {
+	private static List<String> doCmd(ProcessBuilder builder, String[] options)
+			throws IOException, InterruptedException {
 		List<String> result = new ArrayList<String>();
 
-		Process process = Runtime.getRuntime().exec(cmd, null, workDir);
+		Process process = builder.start();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 		String line = "";
 		while ((line = reader.readLine()) != null) {
 			result.add(line);
 			processLine(line, options);
-			
+
 			if (!line.startsWith("Progress"))
 				System.out.println(line);
 		}
@@ -208,10 +228,10 @@ public class GitUtil {
 		return result;
 
 	}
-	
+
 	private static void processLine(String line, String[] options) throws IOException {
-		if(options.length > 1) {
-			switch(CmdLineProcess.fromOption(options[1])) {
+		if (options.length > 1) {
+			switch (CmdLineProcess.fromOption(options[1])) {
 			case SEND_CLIENT:
 				if (!line.startsWith("Progress"))
 					WebSocketServer.session.getBasicRemote().sendText("{show}" + line);
@@ -219,36 +239,40 @@ public class GitUtil {
 			}
 		}
 	}
-	
+
 	private static String jdkPath(JavaVersion jdk) {
 		switch (jdk) {
-		case JAVA11: 
+		case JAVA11:
 			return GitUtil.java11;
 		case JAVA8:
 			return GitUtil.java8;
+		case JAVA17:
+			return GitUtil.java17;
 		default:
-			return GitUtil.java11;
+			return GitUtil.java8;
 		}
 	}
-	
+
 	// ------------------------------------------------------------------------------------------------------
-	
+
 	public static void main(String[] args) {
 		String script = "mvn -v";
 		List<String> list = testProcessShell(script, "");
 		System.out.println(list);
 	}
-	
+
 	public static List<String> testProcessShell(String script, String args, String... options) {
 
-		String[] cmd = new String[] { "powershell.exe", "-c", 
-				"$env:JAVA_HOME='C:\\systex\\tools\\JDK\\openlogic-openjdk-11.0.22+7-windows-x64' ;", 
-				"$env:PATH=\"C:\\systex\\tools\\JDK\\openlogic-openjdk-11.0.22+7-windows-x64\\bin\" + $env:PATH ;"
-				, script };
+		String[] cmd = new String[] { "powershell.exe", "-c",
+				"$env:JAVA_HOME='C:\\systex\\tools\\JDK\\openlogic-openjdk-11.0.22+7-windows-x64' ;",
+				"$env:PATH=\"C:\\systex\\tools\\JDK\\openlogic-openjdk-11.0.22+7-windows-x64\\bin\" + $env:PATH ;",
+				script };
 		File dir = getWorkspace(options);
-		
+		ProcessBuilder builder = new ProcessBuilder(cmd);
+		builder.directory(dir);
+
 		try {
-			return doCmd(cmd, dir, options);
+			return doCmd(builder, options);
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
