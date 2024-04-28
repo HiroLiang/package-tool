@@ -28,3 +28,9 @@ Systex 包板工具，可進行 java8. 11. 17 包板工作。
 
 見 DockerHub 步驟：
 https://hub.docker.com/r/hiroliang/git-package-tool
+
+---
+
+## 未修正 Bug
+
+1. runtime 時指定 java8 會有 plugin 吃不到 8 的問題。
