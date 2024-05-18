@@ -34,3 +34,4 @@ https://hub.docker.com/r/hiroliang/git-package-tool
 ## 未修正 Bug
 
 1. runtime 時指定 java8 會有 plugin 吃不到 8 的問題。
+2. clone timeout 會一直停在 clone 畫面，但其實已經完成。
